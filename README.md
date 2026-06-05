@@ -1,139 +1,140 @@
-# 🦋 Hypothyroidism Diagnosis with Machine Learning
+# 🦋 Diagnóstico de Hipotireoidismo com Machine Learning
 
-Binary classification model trained on 3,772 patient records to predict hypothyroidism risk from hormonal measurements and clinical history — built with a relentless focus on Recall to ensure no sick patient goes undiagnosed.
+Modelo de classificação binária treinado em 3.772 registros de pacientes para prever o risco de hipotireoidismo a partir de medições hormonais e histórico clínico, construído com foco incansável em Recall para garantir que nenhum paciente doente fique sem diagnóstico.
 
-> *"Every year, thousands of patients live with chronic fatigue, unexplained weight gain, and depression — not knowing the cause may be a butterfly-shaped gland in their neck."*
+> *"Todo ano, milhares de pacientes convivem com fadiga crônica, ganho de peso inexplicável e depressão, sem saber que a causa pode ser uma glândula em formato de borboleta no pescoço."*
 
 ---
 
-## 🎯 Business Objective
+## 🎯 Objetivo de Negócio
 
-Hypothyroidism is one of the most underdiagnosed conditions worldwide. The thyroid, when it fails, silently disrupts metabolism, mood, and cardiac function — and diagnosis often comes too late. This project was built around one core question: **can a machine learn to recognize the signs that clinical screening sometimes misses?**
+O hipotireoidismo é uma das condições mais subdiagnosticadas no mundo. A tireoide, quando falha, desregula silenciosamente o metabolismo, o humor e a função cardíaca, e o diagnóstico muitas vezes chega tarde demais. Este projeto foi construído em torno de uma pergunta central: **uma máquina pode aprender a reconhecer os sinais que a triagem clínica às vezes deixa passar?**
 
-In a conventional clinical setting, a physician analyzes exams, history, and symptoms sequentially. With hundreds of patients, this process is slow and prone to human error. The most critical risk is not diagnosing a healthy person as sick — that generates an extra exam, nothing more. The real risk is the opposite: **letting a sick patient leave the consultation without a diagnosis**.
+Num cenário clínico convencional, o médico analisa exames, histórico e sintomas sequencialmente. Com centenas de pacientes, esse processo é lento e sujeito a erro humano. O risco mais crítico não é diagnosticar uma pessoa saudável como doente, isso gera apenas um exame extra. O risco real é o oposto: **deixar um paciente doente sair da consulta sem diagnóstico**.
 
-In machine learning, this is a False Negative. Minimizing this number drove every technical decision in this project.
+Em machine learning, isso é um Falso Negativo. Minimizar esse número guiou cada decisão técnica deste projeto.
 
 ---
 
 ## 📂 Dataset
 
-| Attribute | Detail |
+| Atributo | Detalhe |
 |---|---|
-| Records | 3,772 patients |
-| Features | 29 variables (hormonal, demographic, clinical) |
-| Target variable | `binaryClass`: P (positive) or N (negative) |
-| Class imbalance | 92% negative / 8% positive |
+| Registros | 3.772 pacientes |
+| Features | 29 variáveis (hormonais, demográficas, clínicas) |
+| Variável alvo | `binaryClass`: P (positivo) ou N (negativo) |
+| Desbalanceamento | 92% negativo / 8% positivo |
 
-The imbalance itself defined the entire strategy: a model that always predicted "healthy" would achieve 92% accuracy — and be completely useless. This drove every subsequent technical decision: metric choice, imputation strategy, and model parameters.
+O desbalanceamento por si só definiu toda a estratégia: um modelo que sempre previsse "saudável" atingiria 92% de acurácia e seria completamente inútil. Isso orientou cada decisão técnica seguinte: escolha da métrica, estratégia de imputação e parâmetros do modelo.
 
 ---
 
-## 🗂️ Methodology — CRISP-DM
+## 🗂️ Metodologia — CRISP-DM
 
-### 1. Business Understanding
-Before opening any file, it was essential to understand the clinical problem. **TSH (Thyroid-Stimulating Hormone)** is the primary marker of hypothyroidism: when the thyroid fails, the pituitary gland elevates TSH trying to stimulate it. This medical knowledge was validated by the model itself — TSH emerged as the most important feature in SHAP analysis, confirming the machine learned biology, not noise.
+### 1. Entendimento do Negócio
+Antes de abrir qualquer arquivo, era essencial entender o problema clínico. O **TSH (Hormônio Estimulante da Tireoide)** é o principal marcador do hipotireoidismo: quando a tireoide falha, a hipófise eleva o TSH tentando estimulá-la. Esse conhecimento médico foi validado pelo próprio modelo, o TSH emergiu como a feature mais importante na análise SHAP, confirmando que a máquina aprendeu biologia, não ruído.
 
-### 2. Exploratory Data Analysis (EDA)
-The data arrived dirty. The `?` character masked missing values across entire columns — TBG, for example, had over 95% missing values. Key findings:
-- Hormonal distributions clearly distinct between positive and negative patients, especially in TSH
-- Extreme hormonal outliers that — contrary to classical statistics — were exactly the most valuable signal. A TSH of 500 is not noise; it is the diagnosis.
-- Demographic profile consistent with literature: disease more prevalent in women and patients over 50
+### 2. Análise Exploratória de Dados (EDA)
+Os dados chegaram sujos. O caractere `?` mascarava valores ausentes em colunas inteiras, o TBG, por exemplo, tinha mais de 95% de valores faltantes. Principais achados:
+- Distribuições hormonais claramente distintas entre pacientes positivos e negativos, especialmente no TSH
+- Outliers hormonais extremos que, ao contrário da estatística clássica, eram exatamente o sinal mais valioso. Um TSH de 500 não é ruído, é o diagnóstico.
+- Perfil demográfico consistente com a literatura: doença mais prevalente em mulheres e pacientes acima de 50 anos
 
-### 3. Data Preparation
-Three technical decisions stand out:
+### 3. Preparação dos Dados
+Três decisões técnicas se destacam:
 
-**Hormonal outliers were kept.** Removing a TSH of 500 would erase the clearest evidence of severe hypothyroidism. In clinical data, the outlier is often the diagnosis.
+**Os outliers hormonais foram mantidos.** Remover um TSH de 500 apagaria a evidência mais clara de hipotireoidismo severo. Em dados clínicos, o outlier é frequentemente o diagnóstico.
 
-**Post-split imputation.** The median used to fill missing values was calculated exclusively on the training set and applied to the test set — never the reverse. Doing the opposite causes data leakage: the model would "see" test information before it should, artificially inflating metrics.
+**Imputação pós-split.** A mediana usada para preencher valores ausentes foi calculada exclusivamente no conjunto de treino e aplicada ao teste, nunca o contrário. Fazer o inverso causa data leakage: o modelo "veria" informação do teste antes do que deveria, inflando artificialmente as métricas.
 
-**Columns with over 70% missing values were removed.** Imputing the majority of a column's values is not filling gaps — it is inventing data.
+**Colunas com mais de 70% de valores ausentes foram removidas.** Imputar a maioria dos valores de uma coluna não é preencher lacunas, é inventar dados.
 
-### 4. Modeling
+### 4. Modelagem
 
-Four models were compared in 5-fold stratified cross-validation:
+Quatro modelos foram comparados em validação cruzada estratificada de 5 folds:
 
-| Model | Recall | F1-Score | AUC-ROC |
+| Modelo | Recall | F1-Score | AUC-ROC |
 |---|---|---|---|
-| Logistic Regression | baseline | baseline | baseline |
+| Regressão Logística | baseline | baseline | baseline |
 | Random Forest | — | — | — |
 | XGBoost | — | — | — |
-| **LightGBM (tuned)** | **best** | **best** | **best** |
+| **LightGBM (ajustado)** | **melhor** | **melhor** | **melhor** |
 
-`StratifiedKFold` ensured each fold maintained the original 92/8 class ratio. `RandomizedSearchCV` with 40 iterations found the best LightGBM hyperparameters in a fraction of the time a full `GridSearchCV` would require.
+O `StratifiedKFold` garantiu que cada fold mantivesse a proporção original de 92/8 entre as classes. O `RandomizedSearchCV` com 40 iterações encontrou os melhores hiperparâmetros do LightGBM numa fração do tempo que um `GridSearchCV` completo exigiria.
 
-### 5. Evaluation
-The champion model was evaluated on the test set — data that never influenced any training or selection decision.
+### 5. Avaliação
+O modelo campeão foi avaliado no conjunto de teste, dados que nunca influenciaram nenhuma decisão de treino ou seleção.
 
-SHAP analysis closed the loop: beyond good numbers, the model learned biologically correct relationships. TSH at the top of global importance. T3 and TT4 right below. The model is not a black box — it is an auditable system.
+A análise SHAP fechou o ciclo: além dos bons números, o modelo aprendeu relações biologicamente corretas. TSH no topo da importância global. T3 e TT4 logo abaixo. O modelo não é uma caixa preta, é um sistema auditável.
 
 ---
 
-## 📊 Results
+## 📊 Resultados
 
-| Metric | Value | Clinical meaning |
+| Métrica | Valor | Significado clínico |
 |---|---|---|
-| Recall | ≥ 95% | Of every 100 sick patients, the model detects ~95 |
-| F1-Score | ≥ 92% | Strong balance between precision and sensitivity |
-| AUC-ROC | ≥ 98% | Class separation capability near the theoretical ideal |
-| Precision | ≥ 90% | Of every 100 alerts, ~90 are real cases |
+| Recall | ≥ 95% | A cada 100 pacientes doentes, o modelo detecta ~95 |
+| F1-Score | ≥ 92% | Forte equilíbrio entre precisão e sensibilidade |
+| AUC-ROC | ≥ 98% | Capacidade de separação de classes próxima do ideal teórico |
+| Precision | ≥ 90% | A cada 100 alertas, ~90 são casos reais |
 
 ---
 
-## 🔍 Top 5 Most Decisive Features (SHAP)
+## 🔍 Top 5 Features Mais Decisivas (SHAP)
 
-1. **TSH** — Elevated level is the primary indicator. The pituitary screams when the thyroid goes silent.
-2. **T3 / TT4** — Thyroid hormones produced directly by the gland.
-3. **FTI** — Free Thyroxine Index, a derived measure of high clinical relevance.
-4. **Age** — Risk increases significantly after age 50.
-5. **On Thyroxine** — Patients already on hormone replacement therapy present distinct physiological patterns.
-
----
-
-## ⚠️ Limitations & Next Steps
-
-This model is not production-ready — it is a robust proof of concept. Before any real clinical implementation:
-
-- **External validation:** test on data from other hospitals to assess generalization
-- **Probability calibration:** ensure "70% risk" actually means 70%
-- **Data drift monitoring:** hormonal distributions change with populations and equipment
-- **Regulatory approval:** any clinical decision support system requires validation by competent authorities
+1. **TSH** — Nível elevado é o indicador primário. A hipófise grita quando a tireoide silencia.
+2. **T3 / TT4** — Hormônios tireoidianos produzidos diretamente pela glândula.
+3. **FTI** — Índice de Tiroxina Livre, uma medida derivada de alta relevância clínica.
+4. **Idade** — O risco aumenta significativamente após os 50 anos.
+5. **On Thyroxine** — Pacientes já em terapia de reposição hormonal apresentam padrões fisiológicos distintos.
 
 ---
 
-## 🛠️ Tech Stack
+## ⚠️ Limitações e Próximos Passos
 
-| Category | Tools |
+Este modelo não está pronto para produção, é uma prova de conceito robusta. Antes de qualquer implementação clínica real:
+
+- **Validação externa:** testar em dados de outros hospitais para avaliar a generalização
+- **Calibração de probabilidade:** garantir que "70% de risco" signifique de fato 70%
+- **Monitoramento de data drift:** as distribuições hormonais mudam com populações e equipamentos
+- **Aprovação regulatória:** qualquer sistema de apoio à decisão clínica exige validação por autoridades competentes
+
+---
+
+## 🛠️ Stack Técnica
+
+| Categoria | Ferramentas |
 |---|---|
-| Language | Python 3.x |
-| Data Manipulation | Pandas, NumPy |
-| Visualization | Matplotlib, Seaborn |
+| Linguagem | Python 3.x |
+| Manipulação de Dados | Pandas, NumPy |
+| Visualização | Matplotlib, Seaborn |
 | Machine Learning | Scikit-learn, XGBoost, LightGBM |
-| Explainability | SHAP |
-| Environment | Jupyter Notebook |
+| Interpretabilidade | SHAP |
+| Ambiente | Jupyter Notebook |
 
 ---
 
-## ▶️ How to Run
+## ▶️ Como Executar
 
 ```bash
-# Clone the repository
+# Clone o repositório
 git clone https://github.com/oporaxuao/hypothyroidism-diagnosis-catboost.git
 cd hypothyroidism-diagnosis-catboost
 
-# Install dependencies
+# Instale as dependências
 pip install pandas numpy matplotlib seaborn scikit-learn xgboost lightgbm shap jupyter
 
-# Launch the notebook
+# Inicie o notebook
 jupyter notebook prevencao_hypothyroid.ipynb
 ```
 
-Run cells in sequence. The notebook is self-contained — each step generates the variables needed for the next.
+Execute as células em sequência. O notebook é autocontido, cada etapa gera as variáveis necessárias para a próxima.
 
 ---
 
-## 👤 Author
+## 👤 Autor
 
 **João Alfredo de Sousa Siqueira**
+
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-oporaxuao-blue)](https://linkedin.com/in/oporaxuao)
 [![GitHub](https://img.shields.io/badge/GitHub-oporaxuao-black)](https://github.com/oporaxuao)
