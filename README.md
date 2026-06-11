@@ -163,7 +163,7 @@ cd hypothyroidism-diagnosis-crisp-dm
 pip install pandas numpy matplotlib seaborn scikit-learn xgboost lightgbm statsmodels scipy shap jupyter
 
 # Inicie o notebook
-jupyter notebook prevencao_hypothyroid.ipynb
+jupyter notebook hypothyroid-CRISP-DM.ipynb
 ```
 
 Recomenda-se executar com `Kernel > Restart & Run All` para gerar todos os gráficos na pasta `images/` e reproduzir os resultados na ordem correta.
